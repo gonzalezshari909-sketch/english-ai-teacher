@@ -1,15 +1,15 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 
-// BASE DE DATOS EDUCATIVA EXPANDIDA (Vocabulario, Quizzes y Diálogos)
+// BASE DE DATOS EDUCATIVA
 const CONTENIDO_EDUCATIVO = {
   'Básico': {
     categoria: 'Viajes y Supervivencia ✈️',
     leccion: 'Talking about your day',
     descripcion: 'Aprende a describir tu rutina diaria y pedir ayuda básica.',
     tarjetas: [
-      { en: 'Where is the nearest train station?', es: '¿Dónde está la estación de tren más cercana?', tipo: 'Escuchar' },
-      { en: 'Could you please help me with my bags?', es: '¿Podrías ayudarme con mis maletas, por favor?', tipo: 'Hablar' }
+      { en: 'Where is the nearest train station?', es: '¿Dónde está la estación de tren más cercana?' },
+      { en: 'Could you please help me with my bags?', es: '¿Podrías ayudarme con mis maletas, por favor?' }
     ],
     quiz: {
       pregunta: '¿Cómo se dice "Me despierto a las 7 AM" en inglés?',
@@ -20,10 +20,10 @@ const CONTENIDO_EDUCATIVO = {
   'Intermedio': {
     categoria: 'Trabajo y Negocios 💼',
     leccion: 'Expressing complex opinions',
-    descripcion: 'Aprende a debatir ideas en el entorno laboral y defender tu postura.',
+    descripcion: 'Aprende a debatir ideas en el entorno laboral.',
     tarjetas: [
-      { en: 'From my perspective, the benefits outweigh the risks.', es: 'Desde mi perspectiva, los beneficios superan los riesgos.', tipo: 'Escuchar' },
-      { en: 'Let’s circle back to this topic during next week’s meeting.', es: 'Volvamos a este tema en la reunión de la próxima semana.', tipo: 'Escribir' }
+      { en: 'From my perspective, the benefits outweigh the risks.', es: 'Desde mi perspectiva, los beneficios superan los riesgos.' },
+      { en: 'Let’s circle back to this topic during next week’s meeting.', es: 'Volvamos a este tema en la reunión de la próxima semana.' }
     ],
     quiz: {
       pregunta: '¿Qué significa el modismo "circle back"?',
@@ -36,8 +36,8 @@ const CONTENIDO_EDUCATIVO = {
     leccion: 'Mastering Native Idioms',
     descripcion: 'Domina frases e ironías que los nativos usan en su día a día.',
     tarjetas: [
-      { en: 'We need to hit the ground running on this project.', es: 'Necesitamos empezar este proyecto a toda marcha.', tipo: 'Hablar' },
-      { en: 'He is fighting against all odds to achieve his goals.', es: 'Él está luchando contra todo pronóstico para lograr sus metas.', tipo: 'Escuchar' }
+      { en: 'We need to hit the ground running on this project.', es: 'Necesitamos empezar este proyecto a toda marcha.' },
+      { en: 'He is fighting against all odds to achieve his goals.', es: 'Él está luchando contra todo pronóstico para lograr sus metas.' }
     ],
     quiz: {
       pregunta: '¿Qué significa "hit the ground running"?',
@@ -49,7 +49,7 @@ const CONTENIDO_EDUCATIVO = {
 
 export default function Home() {
   // Navegación (Tabs inferiores)
-  const [activeTab, setActiveTab] = useState('inicio'); // inicio, lecciones, chat, progreso
+  const [activeTab, setActiveTab] = useState('inicio'); 
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState('Básico');
   
@@ -105,7 +105,7 @@ export default function Home() {
       };
       recognition.start();
     } else {
-      alert("Tu navegador no soporta reconocimiento de voz nativo. ¡Prueba usando Google Chrome!");
+      alert("Tu dispositivo no soporta reconocimiento de voz nativo en este navegador. ¡Usa Google Chrome!");
     }
   };
 
@@ -116,7 +116,7 @@ export default function Home() {
     setInput('');
 
     setTimeout(() => {
-      let respuesta = `Excellent sentence! Practicing in the ${selectedModule} module will boost your fluency. Do you have any questions about this topic?`;
+      let respuesta = `Excellent sentence! Practicing in the ${selectedModule} module will boost your fluency. Do you have any questions?`;
       if (texto.toLowerCase().includes('hello') || texto.toLowerCase().includes('hi')) {
         respuesta = "Hi there! Ready to crush your English goals today? Select a challenge or talk to me!";
       }
@@ -238,11 +238,7 @@ export default function Home() {
               <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px', border: '2px solid #e2e8f0' }}>
                 <p style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b', marginBottom: '15px' }}>{CONTENIDO_EDUCATIVO[selectedModule].quiz.pregunta}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {CONTENIDO_EDUCATIVO[selectedModule].quiz.options?.map((opc, i) => (
-                    <button key={i} onClick={() => verificarQuiz(opc)} style={{ padding: '12px 15px', borderRadius: '12px', border: '2px solid #e2e8f0', background: '#ffffff', textAlign: 'left', cursor: 'pointer', fontWeight: '60px', color: '#475569', transition: '0.2s' }}>
-                      {opc}
-                    </button>
-                  )) || CONTENIDO_EDUCATIVO[selectedModule].quiz.opciones.map((opc, i) => (
+                  {CONTENIDO_EDUCATIVO[selectedModule].quiz.opciones.map((opc, i) => (
                     <button key={i} onClick={() => verificarQuiz(opc)} style={{ padding: '12px 15px', borderRadius: '12px', border: '2px solid #e2e8f0', background: '#ffffff', textAlign: 'left', cursor: 'pointer', color: '#475569' }}>
                       {opc}
                     </button>
@@ -269,3 +265,53 @@ export default function Home() {
 
               {/* ENTRADA DE TEXTO Y MICRÓFONO */}
               <div style={{ position: 'absolute', bottom: '75px', left: '15px', right: '15px', display: 'flex', gap: '8px', background: '#ffffff', padding: '5px 0' }}>
+                <button onClick={startSpeechRecognition} style={{ background: isListening ? '#ef4444' : '#10b981', color: 'white', border: 'none', width: '45px', height: '45px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  {isListening ? '🛑' : '🎙️'}
+                </button>
+                <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && procesarChat(input)} placeholder={isListening ? "Listening..." : "Escribe o habla..."} disabled={isListening} style={{ flex: 1, padding: '12px 15px', borderRadius: '25px', border: '2px solid #e2e8f0', outline: 'none' }} />
+                <button onClick={() => procesarChat(input)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 15px', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' }}>Send</button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'progreso' && (
+            /* ================= PESTAÑA 4: ESTADÍSTICAS ================= */
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <h3>Tus Estadísticas 📊</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
+                <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '15px', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '20px' }}>⚡</span>
+                  <h4 style={{ margin: '5px 0 0 0' }}>{xp}</h4>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>Puntos Totales</p>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '15px', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '20px' }}>🔥</span>
+                  <h4 style={{ margin: '5px 0 0 0' }}>{streak} día</h4>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>Racha de estudio</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* MENÚ DE NAVEGACIÓN INFERIOR (DUOLINGO) */}
+        <div style={{ background: '#ffffff', borderTop: '2px solid #f1f5f9', display: 'flex', padding: '10px 0', justifyContent: 'space-around', position: 'absolute', bottom: 0, width: '100%', zIndex: 10 }}>
+          <button onClick={() => setActiveTab('inicio')} style={{ background: 'none', border: 'none', color: activeTab === 'inicio' ? '#10b981' : '#94a3b8', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: '11px', cursor: 'pointer' }}>
+            <span style={{ fontSize: '18px' }}>🏠</span> Inicio
+          </button>
+          <button onClick={() => setActiveTab('lecciones')} style={{ background: 'none', border: 'none', color: activeTab === 'lecciones' ? '#10b981' : '#94a3b8', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: '11px', cursor: 'pointer' }}>
+            <span style={{ fontSize: '18px' }}>📖</span> Trivia
+          </button>
+          <button onClick={() => setActiveTab('chat')} style={{ background: 'none', border: 'none', color: activeTab === 'chat' ? '#10b981' : '#94a3b8', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: '11px', cursor: 'pointer' }}>
+            <span style={{ fontSize: '18px' }}>💬</span> Chat IA
+          </button>
+          <button onClick={() => setActiveTab('progreso')} style={{ background: 'none', border: 'none', color: activeTab === 'progreso' ? '#10b981' : '#94a3b8', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: '11px', cursor: 'pointer' }}>
+            <span style={{ fontSize: '18px' }}>📊</span> Progreso
+          </button>
+        </div>
+
+      </div>
+    </main>
+  );
+}
