@@ -1,0 +1,18 @@
+{
+  "name": "Linguago Pro AI",
+  "short_name": "Linguago",
+  "description": "Tu profesor de inglés avanzado con IA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/fluent/512/artificial-intelligence.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
