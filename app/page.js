@@ -1,51 +1,68 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 
-// Base de datos de lecciones dinámicas para la sección "Comenzar lección"
-const LECCIONES_POR_NIVEL = {
+// BASE DE DATOS EDUCATIVA EXPANDIDA (Vocabulario, Quizzes y Diálogos)
+const CONTENIDO_EDUCATIVO = {
   'Básico': {
-    titulo: 'Talking about your day',
-    descripcion: 'Aprende a describir tu rutina diaria básica.',
-    frases: [
-      { en: 'I wake up at 7 AM every day.', es: 'Me despierto a las 7 AM todos los días.' },
-      { en: 'I drink coffee in the morning.', es: 'Bebo café por la mañana.' }
-    ]
+    categoria: 'Viajes y Supervivencia ✈️',
+    leccion: 'Talking about your day',
+    descripcion: 'Aprende a describir tu rutina diaria y pedir ayuda básica.',
+    tarjetas: [
+      { en: 'Where is the nearest train station?', es: '¿Dónde está la estación de tren más cercana?', tipo: 'Escuchar' },
+      { en: 'Could you please help me with my bags?', es: '¿Podrías ayudarme con mis maletas, por favor?', tipo: 'Hablar' }
+    ],
+    quiz: {
+      pregunta: '¿Cómo se dice "Me despierto a las 7 AM" en inglés?',
+      opciones: ['I wake up at 7 AM', 'I sleep at 7 AM', 'I go to work at 7 AM'],
+      correcta: 'I wake up at 7 AM'
+    }
   },
   'Intermedio': {
-    titulo: 'Expressing complex opinions',
-    descripcion: 'Aprende a debatir y defender tus puntos de vista.',
-    frases: [
-      { en: 'From my perspective, the benefits outweigh the risks.', es: 'Desde mi perspectiva, los beneficios superan los riesgos.' },
-      { en: 'I see your point, however, I disagree with the conclusion.', es: 'Entiendo tu punto, sin embargo, no estoy de acuerdo con la conclusión.' }
-    ]
+    categoria: 'Trabajo y Negocios 💼',
+    leccion: 'Expressing complex opinions',
+    descripcion: 'Aprende a debatir ideas en el entorno laboral y defender tu postura.',
+    tarjetas: [
+      { en: 'From my perspective, the benefits outweigh the risks.', es: 'Desde mi perspectiva, los beneficios superan los riesgos.', tipo: 'Escuchar' },
+      { en: 'Let’s circle back to this topic during next week’s meeting.', es: 'Volvamos a este tema en la reunión de la próxima semana.', tipo: 'Escribir' }
+    ],
+    quiz: {
+      pregunta: '¿Qué significa el modismo "circle back"?',
+      opciones: ['Dar vueltas en círculos', 'Volver a retomar un tema más tarde', 'Terminar una llamada'],
+      correcta: 'Volver a retomar un tema más tarde'
+    }
   },
   'Avanzado': {
-    titulo: 'Mastering Business Idioms',
-    descripcion: 'Domina frases nativas del mundo corporativo.',
-    frases: [
-      { en: 'We need to hit the ground running on this project.', es: 'Necesitamos empezar este proyecto a toda marcha.' },
-      { en: 'Let’s circle back to this topic during next week’s meeting.', es: 'Volvamos a este tema en la reunión de la próxima semana.' }
-    ]
+    categoria: 'Fluidez y Modismos 🚀',
+    leccion: 'Mastering Native Idioms',
+    descripcion: 'Domina frases e ironías que los nativos usan en su día a día.',
+    tarjetas: [
+      { en: 'We need to hit the ground running on this project.', es: 'Necesitamos empezar este proyecto a toda marcha.', tipo: 'Hablar' },
+      { en: 'He is fighting against all odds to achieve his goals.', es: 'Él está luchando contra todo pronóstico para lograr sus metas.', tipo: 'Escuchar' }
+    ],
+    quiz: {
+      pregunta: '¿Qué significa "hit the ground running"?',
+      opciones: ['Empezar algo con mucha energía y éxito', 'Caerse al correr', 'Llegar tarde'],
+      correcta: 'Empezar algo con mucha energía y éxito'
+    }
   }
 };
 
 export default function Home() {
-  // Navegación principal (Menú inferior)
-  const [activeTab, setActiveTab] = useState('inicio'); // 'inicio', 'lecciones', 'chat', 'progreso', 'perfil'
+  // Navegación (Tabs inferiores)
+  const [activeTab, setActiveTab] = useState('inicio'); // inicio, lecciones, chat, progreso
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedModule, setSelectedModule] = useState('Básico'); // Básico, Intermedio, Avanzado
+  const [selectedModule, setSelectedModule] = useState('Básico');
   
-  // Progreso y juego
+  // Gamificación y Progreso
   const [xp, setXp] = useState(65);
   const [streak, setStreak] = useState(1);
-  const [progresoLeccion, setProgresoLeccion] = useState(0);
-  const [mostrarPractica, setMostrarPractica] = useState(false);
+  const [quizRespondido, setQuizRespondido] = useState(false);
+  const [quizMensaje, setQuizMensaje] = useState('');
 
-  // Estados del Chatbot Inteligente con Voz
+  // Chatbot Inteligente con Voz
   const [chat, setChat] = useState([]);
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
-  
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -54,22 +71,24 @@ export default function Home() {
 
   useEffect(() => {
     setChat([
-      { role: 'bot', text: `Hi! I am your AI Coach. Open the chat or select an activity below to start practicing your ${selectedModule} English! 🎙️` }
+      { role: 'bot', text: `Hi! I am Eliza, your AI Coach. Let's practice English! Switch tabs below or text me here. 🎙️` }
     ]);
+    setQuizRespondido(false);
+    setQuizMensaje('');
   }, [selectedModule]);
 
-  // Función de Síntesis de Voz (La IA habla)
+  // Text-to-Speech (La IA Habla)
   const speak = (text) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const msg = new SpeechSynthesisUtterance(text);
       msg.lang = 'en-US';
-      msg.rate = 0.95;
+      msg.rate = 0.9;
       window.speechSynthesis.speak(msg);
     }
   };
 
-  // Función de Reconocimiento de Voz (Tú le hablas a la IA)
+  // Speech-to-Text (Reconocimiento de Voz)
   const startSpeechRecognition = () => {
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -82,166 +101,165 @@ export default function Home() {
       
       recognition.onresult = (event) => {
         const vozTexto = event.results[0][0].transcript;
-        procesarMensajeChat(vozTexto);
+        procesarChat(vozTexto);
       };
       recognition.start();
     } else {
-      alert("Tu dispositivo o navegador no soporta el reconocimiento de voz por ahora. ¡Prueba en Google Chrome!");
+      alert("Tu navegador no soporta reconocimiento de voz nativo. ¡Prueba usando Google Chrome!");
     }
   };
 
-  const procesarMensajeChat = (texto) => {
+  const procesarChat = (texto) => {
     if (!texto.trim()) return;
     setChat(prev => [...prev, { role: 'user', text: texto }]);
-    setXp(prev => prev + 10);
+    setXp(p => p + 10);
     setInput('');
 
     setTimeout(() => {
-      let respuesta = `That sounds interesting! Let's keep talking in English. Can you elaborate on that?`;
+      let respuesta = `Excellent sentence! Practicing in the ${selectedModule} module will boost your fluency. Do you have any questions about this topic?`;
       if (texto.toLowerCase().includes('hello') || texto.toLowerCase().includes('hi')) {
-        respuesta = "Hello! Welcome back to your daily practice. How is your day going?";
+        respuesta = "Hi there! Ready to crush your English goals today? Select a challenge or talk to me!";
       }
       setChat(prev => [...prev, { role: 'bot', text: respuesta }]);
       speak(respuesta);
     }, 700);
   };
 
+  const verificarQuiz = (opcion) => {
+    if (quizRespondido) return;
+    setQuizRespondido(true);
+    if (opcion === CONTENIDO_EDUCATIVO[selectedModule].quiz.correcta) {
+      setXp(p => p + 25);
+      setQuizMensaje('🎉 ¡Excelente! Respuesta correcta (+25 XP)');
+    } else {
+      setQuizMensaje('❌ Incorrecto. ¡Sigue practicando!');
+    }
+  };
+
   return (
-    <main style={{ minHeight: '100vh', background: '#f4f6f8', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', padding: '0 10px' }}>
+    <main style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'system-ui, sans-serif', padding: '0 10px' }}>
       
-      {/* CONTENEDOR DISPOSITIVO MÓVIL ESTILO DUOLINGO */}
-      <div style={{ width: '100%', maxWidth: '430px', height: '94vh', background: '#ffffff', borderRadius: '40px', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', border: '6px solid #e5e5e5' }}>
+      {/* TELÉFONO CONTENEDOR */}
+      <div style={{ width: '100%', maxWidth: '430px', height: '94vh', background: '#ffffff', borderRadius: '40px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', border: '6px solid #e2e8f0' }}>
         
-        {/* TOP BAR / NOTIFICACIONES Y MÓDULO */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 20px', alignItems: 'center', borderBottom: '1px solid #f0f0f0', background: '#ffffff' }}>
-          <button onClick={() => setMenuOpen(true)} style={{ background: '#f4f6f8', border: 'none', width: '40px', height: '40px', borderRadius: '12px', fontSize: '20px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>☰</button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#eef2ff', padding: '6px 14px', borderRadius: '20px' }}>
-            <span style={{ fontSize: '16px' }}>🌐</span>
-            <b style={{ color: '#4f46e5', fontSize: '14px', textTransform: 'uppercase' }}>{selectedModule}</b>
+        {/* HEADER SUPERIOR */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 20px', alignItems: 'center', borderBottom: '1px solid #f1f5f9' }}>
+          <button onClick={() => setMenuOpen(true)} style={{ background: '#f1f5f9', border: 'none', width: '40px', height: '40px', borderRadius: '12px', fontSize: '20px', cursor: 'pointer' }}>☰</button>
+          <div style={{ background: '#ecfdf5', color: '#10b981', padding: '6px 14px', borderRadius: '20px', fontWeight: 'bold', fontSize: '13px' }}>
+            🇺🇸 {selectedModule.toUpperCase()}
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <span style={{ background: '#fff3e0', color: '#ff9800', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>🔥 {streak} días</span>
-            <span style={{ background: '#e8f5e9', color: '#4caf50', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>⭐ {xp} XP</span>
+          <div style={{ display: 'flex', gap: '8px', fontSize: '13px', fontWeight: 'bold' }}>
+            <span style={{ background: '#fff7ed', color: '#ea580c', padding: '5px 10px', borderRadius: '12px' }}>🔥 {streak}d</span>
+            <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '5px 10px', borderRadius: '12px' }}>⭐ {xp} XP</span>
           </div>
         </div>
 
-        {/* MENÚ HAMBURGUESA LATERAL */}
+        {/* MENÚ DE SELECCIÓN DE NIVELES */}
         {menuOpen && (
           <>
-            <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.4)', zIndex: 100 }} />
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '260px', height: '100%', background: '#ffffff', zIndex: 101, padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, color: '#1f2937' }}>Niveles</h3>
-                <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
-              </div>
+            <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.3)', zIndex: 100 }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '260px', height: '100%', background: '#ffffff', zIndex: 101, padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#1e293b' }}>Cambiar Nivel</h3>
               {['Básico', 'Intermedio', 'Avanzado'].map(nivel => (
-                <button key={nivel} onClick={() => { setSelectedModule(nivel); setMenuOpen(false); }} style={{ padding: '14px', borderRadius: '14px', border: 'none', textAlign: 'left', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', background: selectedModule === nivel ? '#58cc02' : '#f4f6f8', color: selectedModule === nivel ? '#ffffff' : '#4b5563', transition: '0.2s' }}>
-                  ⚡ Nivel {nivel}
+                <button key={nivel} onClick={() => { setSelectedModule(nivel); setMenuOpen(false); }} style={{ padding: '14px', borderRadius: '14px', border: 'none', textAlign: 'left', fontWeight: 'bold', cursor: 'pointer', background: selectedModule === nivel ? '#10b981' : '#f8fafc', color: selectedModule === nivel ? '#ffffff' : '#64748b' }}>
+                  🎯 Nivel {nivel}
                 </button>
               ))}
             </div>
           </>
         )}
 
-        {/* CUERPO CENTRAL DE LA APP (CAMBIA SEGÚN LA PESTAÑA INFERIOR) */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#ffffff' }}>
+        {/* CONTENIDO INTERACTIVO SEGÚN TABS */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#ffffff', paddingBottom: '80px' }}>
           
           {activeTab === 'inicio' && (
-            /* ================= PESTAÑA 1: INICIO (ESTILO COPIA FIEL) ================= */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
               
-              {/* CARD DE PROGRESO CON AVATAR EN VERDE JADE DUOLINGO */}
-              <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)', borderRadius: '24px', padding: '20px', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 20px rgba(16, 185, 129, 0.2)' }}>
-                <div style={{ flex: 1, zIndex: 1 }}>
-                  <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '10px', fontWeight: 'bold' }}>Tu progreso</span>
-                  <h2 style={{ margin: '8px 0 2px 0', fontSize: '22px', fontWeight: 'bold' }}>Nivel {selectedModule}</h2>
-                  <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9 }}>Idioma Objetivo: <b>us English 🇺🇸</b></p>
-                  
-                  {/* Barra de Progreso */}
-                  <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.3)', borderRadius: '10px', overflow: 'hidden', display: 'flex' }}>
-                    <div style={{ width: '65%', height: '100%', background: '#ffc800', borderRadius: '10px' }} />
+              {/* CARD DUOLINGO VERDE CON PERSONAJE */}
+              <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '24px', padding: '20px', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.2)', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold' }}>Tu progreso</span>
+                  <h2 style={{ margin: '5px 0', fontSize: '22px' }}>Nivel {selectedModule}</h2>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '12px', opacity: 0.9 }}>{CONTENIDO_EDUCATIVO[selectedModule].categoria}</p>
+                  <div style={{ width: '130px', height: '8px', background: 'rgba(255,255,255,0.3)', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ width: '65%', height: '100%', background: '#fbbf24' }} />
                   </div>
-                  <span style={{ fontSize: '11px', display: 'block', marginTop: '5px', opacity: 0.8 }}>65% Completado • ¡Sigue así! 💪</span>
                 </div>
-                {/* Muñequita Avatar Vectorizada */}
-                <div style={{ width: '100px', height: '110px', background: '#ffe4e6', borderRadius: '50% 50% 40% 40%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', marginLeft: '10px', boxShadow: '0 8px 15px rgba(0,0,0,0.1)', position: 'relative' }}>
-                  👩‍
-                  <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: '#ffffff', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>🎧</div>
-                </div>
+                <div style={{ width: '85px', height: '85px', background: '#ffe4e6', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '45px', boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }}>👩‍🎧</div>
               </div>
 
-              {/* SECCIÓN MÓDULOS DE ACTIVIDADES (GRID) */}
+              {/* GRID BOTONES DE ACCIÓN */}
               <div>
-                <h4 style={{ margin: '0 0 15px 0', color: '#1f2937', fontSize: '16px', fontWeight: 'bold' }}>¿Qué quieres hacer hoy?</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                  
-                  <div onClick={() => setActiveTab('chat')} style={{ background: '#e6fcf5', border: '2px solid #c3fae8', borderRadius: '20px', padding: '15px', textAlign: 'center', cursor: 'pointer', transition: '0.2s' }}>
-                    <div style={{ fontSize: '28px', marginBottom: '5px' }}>💬</div>
-                    <b style={{ color: '#0ca678', fontSize: '14px', display: 'block' }}>Hablar</b>
-                    <span style={{ color: '#20c997', fontSize: '11px' }}>Practica conversaciones</span>
+                <h4 style={{ margin: '0 0 12px 0', color: '#334155' }}>¿Qué quieres practicar hoy?</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div onClick={() => setActiveTab('chat')} style={{ background: '#f0fdf4', border: '2px solid #bbf7d0', borderRadius: '18px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '24px' }}>🗣️</span> <b style={{ display: 'block', color: '#16a34a', fontSize: '14px' }}>Hablar</b>
                   </div>
-
-                  <div onClick={() => { setActiveTab('chat'); startSpeechRecognition(); }} style={{ background: '#e7f5ff', border: '2px solid #d0ebff', borderRadius: '20px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: '28px', marginBottom: '5px' }}>🎧</div>
-                    <b style={{ color: '#1c7ed6', fontSize: '14px', display: 'block' }}>Escuchar</b>
-                    <span style={{ color: '#228be6', fontSize: '11px' }}>Mejora tu comprensión</span>
+                  <div onClick={() => { setActiveTab('chat'); startSpeechRecognition(); }} style={{ background: '#f0f9ff', border: '2px solid #bae6fd', borderRadius: '18px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '24px' }}>🎧</span> <b style={{ display: 'block', color: '#0284c7', fontSize: '14px' }}>Escuchar</b>
                   </div>
-
-                  <div onClick={() => setMostrarPractica(true)} style={{ background: '#f3f0ff', border: '2px solid #e5dbff', borderRadius: '20px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: '28px', marginBottom: '5px' }}>📚</div>
-                    <b style={{ color: '#7048e8', fontSize: '14px', display: 'block' }}>Aprender</b>
-                    <span style={{ color: '#748ffc', fontSize: '11px' }}>Gramática y vocabulario</span>
+                  <div onClick={() => setActiveTab('lecciones')} style={{ background: '#faf5ff', border: '2px solid #e9d5ff', borderRadius: '18px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '24px' }}>📚</span> <b style={{ display: 'block', color: '#7c3aed', fontSize: '14px' }}>Aprender</b>
                   </div>
-
-                  <div onClick={() => setActiveTab('chat')} style={{ background: '#fff9db', border: '2px solid #fff3bf', borderRadius: '20px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: '28px', marginBottom: '5px' }}>✏️</div>
-                    <b style={{ color: '#f59f00', fontSize: '14px', display: 'block' }}>Escribir</b>
-                    <span style={{ color: '#fab005', fontSize: '11px' }}>Práctica tu escritura</span>
+                  <div onClick={() => setActiveTab('chat')} style={{ background: '#fefce8', border: '2px solid #fef08a', borderRadius: '18px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
+                    <span style={{ fontSize: '24px' }}>✏️</span> <b style={{ display: 'block', color: '#ca8a04', fontSize: '14px' }}>Escribir</b>
                   </div>
-
                 </div>
               </div>
 
-              {/* CARD LECCIÓN DIARIA DINÁMICA */}
-              <div style={{ background: '#ffffff', border: '2px solid #e5e5e5', borderRadius: '24px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ flex: 1 }}>
-                  <span style={{ color: '#7048e8', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>⭐ Lección sugerida</span>
-                  <h3 style={{ margin: '6px 0 4px 0', color: '#2c2c2c', fontSize: '17px' }}>{LECCIONES_POR_NIVEL[selectedModule].titulo}</h3>
-                  <p style={{ margin: '0 0 15px 0', color: '#777777', fontSize: '12px' }}>{LECCIONES_POR_NIVEL[selectedModule].descripcion}</p>
-                  <button onClick={() => setMostrarPractica(true)} style={{ background: '#58cc02', color: '#ffffff', border: 'none', borderBottom: '4px solid #46a302', padding: '10px 20px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>Comenzar lección</button>
-                </div>
-                <div style={{ fontSize: '50px' }}>📅</div>
-              </div>
-
-              {/* MINI PRÁCTICA INTERACTIVA FLOTANTE */}
-              {mostrarPractica && (
-                <div style={{ background: '#f8fafc', border: '2px solid #4f46e5', borderRadius: '20px', padding: '15px', marginTop: '5px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <b>Challenge Activo:</b>
-                    <button onClick={() => setMostrarPractica(false)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>Cerrar</button>
-                  </div>
-                  {LECCIONES_POR_NIVEL[selectedModule].frases.map((f, i) => (
-                    <div key={i} style={{ background: '#ffffff', padding: '10px', borderRadius: '12px', marginBottom: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* SECCIÓN INTERACTIVA DE LECCIÓN SUGERIDA */}
+              <div style={{ background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: '20px', padding: '18px' }}>
+                <span style={{ fontSize: '11px', color: '#4f46e5', fontWeight: 'bold', textTransform: 'uppercase' }}>🎯 Reto Diario</span>
+                <h3 style={{ margin: '4px 0', fontSize: '16px', color: '#1e293b' }}>{CONTENIDO_EDUCATIVO[selectedModule].leccion}</h3>
+                <p style={{ margin: '0 0 15px 0', fontSize: '12px', color: '#64748b' }}>{CONTENIDO_EDUCATIVO[selectedModule].descripcion}</p>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {CONTENIDO_EDUCATIVO[selectedModule].tarjetas.map((t, idx) => (
+                    <div key={idx} style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1e293b' }}>{f.en}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>{f.es}</div>
+                        <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{t.en}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{t.es}</div>
                       </div>
-                      <button onClick={() => { speak(f.en); setXp(p => p + 15); }} style={{ background: '#eef2ff', border: 'none', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}>🔊 +15 XP</button>
+                      <button onClick={() => { speak(t.en); setXp(x => x + 5); }} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer' }}>🔊</button>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
 
             </div>
           )}
 
+          {activeTab === 'lecciones' && (
+            /* ================= PESTAÑA 2: LECCIONES / QUIZZES ================= */
+            <div>
+              <h3 style={{ color: '#1e293b', margin: '0 0 5px 0' }}>Trivia de Nivel</h3>
+              <p style={{ color: '#64748b', fontSize: '13px', margin: '0 0 20px 0' }}>Pon a prueba tus conocimientos gramaticales y acumula experiencia.</p>
+              
+              <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '20px', border: '2px solid #e2e8f0' }}>
+                <p style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b', marginBottom: '15px' }}>{CONTENIDO_EDUCATIVO[selectedModule].quiz.pregunta}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {CONTENIDO_EDUCATIVO[selectedModule].quiz.options?.map((opc, i) => (
+                    <button key={i} onClick={() => verificarQuiz(opc)} style={{ padding: '12px 15px', borderRadius: '12px', border: '2px solid #e2e8f0', background: '#ffffff', textAlign: 'left', cursor: 'pointer', fontWeight: '60px', color: '#475569', transition: '0.2s' }}>
+                      {opc}
+                    </button>
+                  )) || CONTENIDO_EDUCATIVO[selectedModule].quiz.opciones.map((opc, i) => (
+                    <button key={i} onClick={() => verificarQuiz(opc)} style={{ padding: '12px 15px', borderRadius: '12px', border: '2px solid #e2e8f0', background: '#ffffff', textAlign: 'left', cursor: 'pointer', color: '#475569' }}>
+                      {opc}
+                    </button>
+                  ))}
+                </div>
+                {quizMensaje && <p style={{ marginTop: '15px', fontWeight: 'bold', textAlign: 'center', color: quizMensaje.includes('🎉') ? '#16a34a' : '#dc2626', fontSize: '14px' }}>{quizMensaje}</p>}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'chat' && (
-            /* ================= PESTAÑA 3: CHAT INTELIGENTE EXCLUSIVO ================= */
+            /* ================= PESTAÑA 3: CHAT TUTOR IA ================= */
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '70px' }}>
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '80px' }}>
                 {chat.map((msg, i) => (
                   <div key={i} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
-                    <div style={{ background: msg.role === 'user' ? '#10b981' : '#f1f5f9', color: msg.role === 'user' ? '#ffffff' : '#1f2937', padding: '12px 16px', borderRadius: '20px', fontSize: '14px', border: msg.role === 'user' ? 'none' : '1px solid #e2e8f0', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+                    <div style={{ background: msg.role === 'user' ? '#10b981' : '#f1f5f9', color: msg.role === 'user' ? '#ffffff' : '#1e293b', padding: '12px 16px', borderRadius: '18px', fontSize: '14px' }}>
                       {msg.text}
                     </div>
                   </div>
@@ -249,43 +267,5 @@ export default function Home() {
                 <div ref={chatEndRef} />
               </div>
 
-              {/* CONTROLES DE ENTRADA (VOZ Y TEXTO) ABAJO DEL CHAT */}
+              {/* ENTRADA DE TEXTO Y MICRÓFONO */}
               <div style={{ position: 'absolute', bottom: '75px', left: '15px', right: '15px', display: 'flex', gap: '8px', background: '#ffffff', padding: '5px 0' }}>
-                <button onClick={startSpeechRecognition} style={{ background: isListening ? '#ef4444' : '#10b981', color: 'white', border: 'none', width: '45px', height: '45px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 4px 10px rgba(16,185,129,0.3)' }}>
-                  {isListening ? '🛑' : '🎙️'}
-                </button>
-                <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && procesarMensajeChat(input)} placeholder={isListening ? "Listening your English..." : "Escribe o usa el micrófono..."} disabled={isListening} style={{ flex: 1, padding: '12px 15px', borderRadius: '25px', border: '2px solid #e5e5e5', outline: 'none', fontSize: '14px' }} />
-                <button onClick={() => procesarMensajeChat(input)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 15px', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' }}>Enviar</button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'lecciones' && <p style={{ textAlign: 'center', color: '#777', marginTop: '40px' }}>📚 Sección de cursos estructurados en desarrollo.</p>}
-          {activeTab === 'progreso' && <p style={{ textAlign: 'center', color: '#777', marginTop: '40px' }}>📈 Gráficos de rendimiento y estadísticas.</p>}
-          {activeTab === 'perfil' && <p style={{ textAlign: 'center', color: '#777', marginTop: '40px' }}>👤 Configuración de tu cuenta de Linguago.</p>}
-
-        </div>
-
-        {/* MENÚ DE NAVEGACIÓN INFERIOR (ESTILO DUOLINGO PERFECTO) */}
-        <div style={{ background: '#ffffff', borderTop: '2px solid #e5e5e5', display: 'flex', padding: '10px 0', justifyContent: 'space-around', position: 'absolute', bottom: 0, width: '100%', zIndex: 10 }}>
-          <button onClick={() => setActiveTab('inicio')} style={{ background: 'none', border: 'none', color: activeTab === 'inicio' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
-            <span style={{ fontSize: '20px' }}>🏠</span> Inicio
-          </button>
-          <button onClick={() => setActiveTab('lecciones')} style={{ background: 'none', border: 'none', color: activeTab === 'lecciones' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
-            <span style={{ fontSize: '20px' }}>📖</span> Lecciones
-          </button>
-          <button onClick={() => setActiveTab('chat')} style={{ background: 'none', border: 'none', color: activeTab === 'chat' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
-            <span style={{ fontSize: '20px' }}>💬</span> Chat IA
-          </button>
-          <button onClick={() => setActiveTab('progreso')} style={{ background: 'none', border: 'none', color: activeTab === 'progreso' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
-            <span style={{ fontSize: '20px' }}>📊</span> Progreso
-          </button>
-          <button onClick={() => setActiveTab('perfil')} style={{ background: 'none', border: 'none', color: activeTab === 'perfil' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
-            <span style={{ fontSize: '20px' }}>👤</span> Perfil
-          </button>
-        </div>
-
-      </div>
-    </main>
-  );
-}
