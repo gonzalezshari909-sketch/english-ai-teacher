@@ -1,357 +1,87 @@
 'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
 
-// Generador de contenido dinámico ilimitado por nivel para que nunca sea el mismo
-const GENERADOR_LECCIONES = {
-  'Básico': [
-    { frase: 'Good morning, how can I help you?', traduccion: 'Buenos días, ¿cómo puedo ayudarte?', contexto: 'Ideal para iniciar el día' },
-    { frase: 'Where is the nearest supermarket?', traduccion: '¿Dónde está el supermercado más cercano?', contexto: 'Para pedir direcciones' },
-    { frase: 'Nice to meet you, my name is John', traduccion: 'Mucho gusto, mi nombre es John', contexto: 'Para presentarse' },
-    { frase: 'How much does this cost, please?', traduccion: '¿Cuánto cuesta esto, por favor?', contexto: 'Para de compras' }
-  ],
-  'Intermedio': [
-    { frase: 'I am looking forward to working with you', traduccion: 'Tengo muchas ganas de trabajar contigo', contexto: 'Entorno profesional / laboral' },
-    { frase: 'Could you please speak a bit slower?', traduccion: '¿Podrías hablar un poco más despacio, por favor?', contexto: 'Para fluidez conversacional' },
-    { frase: 'I completely agree with your point of view', traduccion: 'Estoy completamente de acuerdo con tu punto de vista', contexto: 'Para debates y opiniones' },
-    { frase: 'Let me double-check that information for you', traduccion: 'Déjame verificar esa información por ti', contexto: 'Resolución de problemas' }
-  ],
-  'Avanzado': [
-    { frase: 'We need to hit the ground running on this project', traduccion: 'Necesitamos empezar este proyecto a toda marcha / sin perder tiempo', contexto: 'Modismo empresarial avanzado' },
-    { frase: 'It is vital to balance the pros and cons meticulously', traduccion: 'Es vital sopesar los pros y los contras meticulosamente', contexto: 'Análisis crítico' },
-    { frase: 'Actions speak louder than words in these circumstances', traduccion: 'Las acciones hablan más fuerte que las palabras en estas circunstancias', contexto: 'Proverbio formal' },
-    { frase: 'She managed to overcome the obstacles against all odds', traduccion: 'Ella logró superar los obstáculos contra todo pronóstico', contexto: 'Narrativa compleja' }
-  ]
-};
-
 export default function Home() {
-  const [selectedModule, setSelectedModule] = useState('Básico'); 
-  const [leccionesActuales, setLeccionesActuales] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedModule, setSelectedModule] = useState('Básico');
   const [xp, setXp] = useState(0);
-  const [streak, setStreak] = useState(1);
-  const [input, setInput] = useState('');
   const [chat, setChat] = useState([]);
-  const [isListening, setIsListening] = useState(false); // Estado para el micrófono
-  
+  const [input, setInput] = useState('');
   const chatEndRef = useRef(null);
 
-  // Auto-scroll para seguir el ritmo de la conversación
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat]);
 
-  // Inicializar lecciones aleatorias y cargar datos del progreso
   useEffect(() => {
-    const savedXp = localStorage.getItem('xp');
-    const savedStreak = localStorage.getItem('streak');
+    const savedXp = localStorage.getItem('xp_pro');
     if (savedXp) setXp(Number(savedXp));
-    if (savedStreak) setStreak(Number(savedStreak));
-
-    // Cargar lecciones iniciales de nivel básico
-    rotarLecciones('Básico');
-
-    setChat([
-      { role: 'bot', text: "👋 Hi! I am your interactive AI Coach. Select any level below, complete challenges, or press the 🎙️ button to talk to me in real-time!" }
-    ]);
+    setChat([{ role: 'bot', text: "Hello! I am your AI Tutor. Open the menu (☰) to change levels or talk to me here!" }]);
   }, []);
 
-  // Función para rotar y cambiar el contenido dinámicamente para que nunca sea el mismo
-  const rotarLecciones = (nivel) => {
-    const pool = GENERADOR_LECCIONES[nivel];
-    // Desordenar y tomar frases dinámicas
-    const mezcladas = [...pool].sort(() => 0.5 - Math.random());
-    setLeccionesActuales(mezcladas.slice(0, 2));
-  };
-
-  // Cada vez que cambias de pestaña, el contenido cambia de acuerdo al nivel de forma automática
-  const handleTabChange = (modulo) => {
-    setSelectedModule(modulo);
-    rotarLecciones(modulo);
-  };
-
-  // Sintetizador de voz (La app te habla)
-  const speak = (text) => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Detener cualquier audio previo
-      const msg = new SpeechSynthesisUtterance(text);
-      msg.lang = 'en-US';
-      msg.rate = 0.95; // Velocidad cómoda para aprender
-      window.speechSynthesis.speak(msg);
-    }
-  };
-
-  // Reconocimiento de voz por micrófono (Tú le hablas a la app)
-  const startSpeechRecognition = () => {
-    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.lang = 'en-US'; // Escucha tu inglés
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.onresult = (event) => {
-        const vozTexto = event.results[0][0].transcript;
-        procesarMensajeUsuario(vozTexto);
-      };
-
-      recognition.start();
-    } else {
-      alert("Lo siento, tu navegador o dispositivo no soporta el reconocimiento de voz directo. ¡Prueba usando Google Chrome!");
-    }
-  };
-
-  const completeLesson = (lesson) => {
-    setXp(prev => prev + 20);
-    setChat(prev => [
-      ...prev,
-      { role: 'bot', text: `✨ Excellent! You practiced: "${lesson.frase}". Perfect pronunciation! (+20 XP)` }
-    ]);
-    speak(lesson.frase);
-    // Cambiar el contenido inmediatamente por uno nuevo para mantenerlo dinámico
-    setTimeout(() => rotarLecciones(selectedModule), 1000);
-  };
-
-  const procesarMensajeUsuario = (texto) => {
-    if (!texto.trim()) return;
-
-    setChat(prev => [...prev, { role: 'user', text: texto }]);
-    setXp(prev => prev + 5);
-
-    // Simular procesamiento inteligente basado en el nivel interactivo actual
-    setTimeout(() => {
-      let botResponse = `I heard you say: "${texto}". That's great! Let's keep practicing conversational English in the ${selectedModule} module. Tell me more!`;
-      
-      if (selectedModule === 'Básico') {
-        botResponse = `Wonderful! Your sentence is good for beginners. Keep it simple! Can you say 'Hello' or ask for help?`;
-      } else if (selectedModule === 'Avanzado') {
-        botResponse = `Splendid formulation! That aligns perfectly with sophisticated English phrasing. What are your thoughts on challenging vocabulary?`;
-      }
-
-      setChat(prev => [...prev, { role: 'bot', text: botResponse }]);
-      speak(botResponse); // Te responde con voz de vuelta
-    }, 800);
-  };
-
-  const handleSendText = () => {
-    procesarMensajeUsuario(input);
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    const userMsg = input;
+    setChat(prev => [...prev, { role: 'user', text: userMsg }]);
     setInput('');
+    setXp(prev => prev + 5);
+    localStorage.setItem('xp_pro', xp + 5);
+
+    setTimeout(() => {
+      setChat(prev => [...prev, { role: 'bot', text: `Great sentence! Let's keep practicing ${selectedModule} English. What else is on your mind?` }]);
+    }, 600);
   };
 
   return (
-    <main style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Fondo dinámico y más vivo
-      padding: '20px 10px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center'
-    }}>
+    <main style={{ minHeight: '100vh', background: '#020617', color: 'white', fontFamily: 'sans-serif', display: 'flex', flexDirection: 'column' }}>
       
-      <div style={{
-        width: '100%',
-        maxWidth: '430px',
-        background: '#ffffff',
-        borderRadius: '35px',
-        boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        height: '92vh',
-        border: '4px solid rgba(255, 255, 255, 0.1)'
-      }}>
-
-        {/* BARRA SUPERIOR GAMIFICADA */}
-        <div style={{
-          background: 'linear-gradient(180deg, #111827 0%, #1f2937 100%)',
-          color: 'white',
-          padding: '20px',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', background: '#e11d48', padding: '5px 12px', borderRadius: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              🔥 {streak} DÍAS
-            </span>
-            <span style={{ fontWeight: '900', fontSize: '20px', letterSpacing: '1.5px', color: '#38bdf8' }}>
-              LINGUAGO
-            </span>
-            <span style={{ fontSize: '13px', background: 'linear-gradient(90deg, #eab308 0%, #ca8a04 100%)', padding: '5px 12px', borderRadius: '20px', fontWeight: 'bold', color: '#1e1b4b' }}>
-              ⭐ {xp} XP
-            </span>
-          </div>
+      {/* HEADER SUPERIOR PRO */}
+      <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 20px', background: '#0f172a', alignItems: 'center', borderBottom: '1px solid #1e293b', position: 'sticky', top: 0, zIndex: 10 }}>
+        <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '28px', cursor: 'pointer' }}>
+          ☰
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src="http://googleusercontent.com/image_collection/image_retrieval/966400121345029395" style={{ width: '35px', borderRadius: '50%' }} />
+          <b style={{ letterSpacing: '1px', fontSize: '14px' }}>LINGUAGO PRO</b>
         </div>
+        <div style={{ fontSize: '12px', background: '#1e3a8a', padding: '5px 12px', borderRadius: '20px' }}>
+          ⭐ {xp} XP
+        </div>
+      </nav>
 
-        {/* CONTENEDOR DE CONVERSACIÓN TIPO CHATGPT */}
-        <div style={{
-          flex: 1,
-          padding: '20px',
-          overflowY: 'auto',
-          background: '#f1f5f9',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px'
-        }}>
-          {chat.map((msg, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-              <div style={{
-                maxWidth: '85%',
-                padding: '14px 18px',
-                borderRadius: msg.role === 'user' ? '22px 22px 4px 22px' : '22px 22px 22px 4px',
-                background: msg.role === 'user' ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : '#ffffff',
-                color: msg.role === 'user' ? '#ffffff' : '#0f172a',
-                boxShadow: '0 4px 6px rgba(15, 23, 42, 0.05)',
-                fontSize: '14.5px',
-                lineHeight: '1.5',
-                border: msg.role === 'user' ? 'none' : '1px solid #e2e8f0'
-              }}>
-                <span style={{ display: 'block', fontSize: '10px', fontWeight: 'bold', marginBottom: '4px', opacity: 0.6, textTransform: 'uppercase' }}>
-                  {msg.role === 'user' ? 'Tú (Hablando)' : 'Eliza AI Coach'}
-                </span>
-                {msg.text}
-              </div>
+      {/* MENU LATERAL DESPLEGABLE */}
+      {menuOpen && (
+        <>
+          <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.7)', zIndex: 99 }} />
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '280px', height: '100%', background: '#0f172a', zIndex: 100, padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: '5px 0 20px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ color: '#38bdf8', margin: 0 }}>Niveles</h3>
+              <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '20px' }}>✕</button>
             </div>
-          ))}
-          <div ref={chatEndRef} />
-        </div>
-
-        {/* INPUT DE TEXTO + INTERACCIÓN POR VOZ (MICRÓFONO) */}
-        <div style={{
-          padding: '14px 16px',
-          background: '#ffffff',
-          borderTop: '1px solid #e2e8f0',
-          display: 'flex',
-          gap: '10px',
-          alignItems: 'center'
-        }}>
-          {/* BOTÓN DE MICRÓFONO INTERACTIVO */}
-          <button
-            onClick={startSpeechRecognition}
-            style={{
-              background: isListening ? '#ef4444' : '#38bdf8',
-              color: 'white',
-              border: 'none',
-              width: '45px',
-              height: '45px',
-              borderRadius: '50%',
-              fontSize: '18px',
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              boxShadow: isListening ? '0 0 15px #ef4444' : '0 4px 10px rgba(56, 189, 248, 0.3)',
-              transition: 'all 0.3s ease',
-              animation: isListening ? 'pulse 1.2s infinite' : 'none'
-            }}
-            title="Presiona para hablar en inglés"
-          >
-            {isListening ? '🛑' : '🎙️'}
-          </button>
-
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendText()}
-            placeholder={isListening ? "Escuchando tu voz..." : "Escribe o usa el micrófono..."}
-            disabled={isListening}
-            style={{
-              flex: 1,
-              padding: '12px 18px',
-              borderRadius: '30px',
-              border: '1px solid #cbd5e1',
-              outline: 'none',
-              fontSize: '14px',
-              background: isListening ? '#f8fafc' : '#ffffff'
-            }}
-          />
-          
-          <button onClick={handleSendText} style={{
-            background: '#0f172a',
-            color: 'white',
-            border: 'none',
-            padding: '12px 22px',
-            borderRadius: '30px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}>
-            Enviar
-          </button>
-        </div>
-
-        {/* MENÚ DE PESTAÑAS ABIERTAS SIN BLOQUEOS */}
-        <div style={{ background: '#ffffff', borderTop: '1px solid #f1f5f9', padding: '14px' }}>
-          <p style={{ margin: '0 0 10px 4px', fontSize: '12px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Prácticas sugeridas del nivel seleccionado:
-          </p>
-          <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '16px', padding: '5px' }}>
-            {['Básico', 'Intermedio', 'Avanzado'].map((mod) => (
-              <button
-                key={mod}
-                onClick={() => handleTabChange(mod)}
-                style={{
-                  flex: 1,
-                  padding: '10px 0',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontWeight: '700',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  background: selectedModule === mod ? '#0f172a' : 'transparent',
-                  color: selectedModule === mod ? '#ffffff' : '#64748b',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {mod}
+            {['Básico', 'Intermedio', 'Avanzado'].map(m => (
+              <button key={m} onClick={() => { setSelectedModule(m); setMenuOpen(false); }} style={{ padding: '15px', borderRadius: '12px', border: 'none', textAlign: 'left', background: selectedModule === m ? '#1e3a8a' : '#1e293b', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
+                {selectedModule === m ? '🔹 ' : ''} Sesión {m}
               </button>
             ))}
           </div>
+        </>
+      )}
 
-          {/* CONTENIDO EN CONSTANTE CAMBIO / DINÁMICO */}
-          <div style={{ marginTop: '12px', height: '145px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {leccionesActuales.map((lesson, idx) => (
-              <div key={idx} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: 'linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%)',
-                padding: '12px 16px',
-                borderRadius: '16px',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-              }}>
-                <div style={{ flex: 1, paddingRight: '10px' }}>
-                  <span style={{ display: 'inline-block', fontSize: '10px', background: '#cbd5e1', color: '#334155', padding: '2px 6px', borderRadius: '4px', marginBottom: '4px', fontWeight: '600' }}>
-                    {lesson.contexto}
-                  </span>
-                  <b style={{ color: '#0f172a', fontSize: '14px', display: 'block', marginBottom: '2px' }}>{lesson.frase}</b>
-                  <span style={{ color: '#64748b', fontSize: '12.5px' }}>{lesson.traduccion}</span>
-                </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => speak(lesson.frase)} style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                    🔊
-                  </button>
-                  <button onClick={() => completeLesson(lesson)} style={{ background: '#22c55e', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(34, 197, 94, 0.2)' }}>
-                    ✓ +20
-                  </button>
-                </div>
-              </div>
-            ))}
+      {/* CHAT INTERACTIVO */}
+      <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <p style={{ textAlign: 'center', fontSize: '12px', color: '#64748b' }}>MODO: {selectedModule.toUpperCase()}</p>
+        {chat.map((msg, i) => (
+          <div key={i} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', padding: '12px 16px', borderRadius: '15px', background: msg.role === 'user' ? '#2563eb' : '#1e293b', color: 'white', fontSize: '15px' }}>
+            {msg.text}
           </div>
-        </div>
+        ))}
+        <div ref={chatEndRef} />
+      </div>
 
+      {/* INPUT FINAL */}
+      <div style={{ padding: '20px', background: '#0f172a', display: 'flex', gap: '10px' }}>
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Habla con tu IA..." style={{ flex: 1, padding: '12px 20px', borderRadius: '25px', border: '1px solid #334155', background: '#1e293b', color: 'white', outline: 'none' }} />
+        <button onClick={sendMessage} style={{ padding: '12px 20px', borderRadius: '25px', border: 'none', background: '#38bdf8', color: '#0f172a', fontWeight: 'bold' }}>Enviar</button>
       </div>
     </main>
   );
