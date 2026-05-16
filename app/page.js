@@ -1,4 +1,11 @@
 'use client';
+// Añadir esto justo debajo de 'use client';
+if (typeof window !== 'undefined') {
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = '/manifest.json';
+  document.head.appendChild(link);
+}
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function Home() {
