@@ -1,77 +1,80 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 
-// Base de datos interactiva con contenido real por niveles
-const CONTENIDO_NIVELES = {
-  'Básico': [
-    { frase: 'Good morning, how are you?', traduccion: 'Buenos días, ¿cómo estás?', tipo: 'Saludarse', xp: 20 },
-    { frase: 'Where is the nearest restroom?', traduccion: '¿Dónde está el baño más cercano?', tipo: 'Direcciones', xp: 20 },
-    { frase: 'Could you help me, please?', traduccion: '¿Podrías ayudarme, por favor?', tipo: 'Supervivencia', xp: 20 },
-    { frase: 'How much does this cost?', traduccion: '¿Cuánto cuesta esto?', tipo: 'Compras', xp: 20 }
-  ],
-  'Intermedio': [
-    { frase: 'I would like to make a reservation for tonight.', traduccion: 'Me gustaría hacer una reservación para esta noche.', tipo: 'Restaurantes', xp: 30 },
-    { frase: 'Could you please speak a bit slower?', traduccion: '¿Podrías hablar un poco más despacio, por favor?', tipo: 'Fluidez', xp: 30 },
-    { frase: 'I completely agree with your point of view.', traduccion: 'Estoy completamente de acuerdo con tu punto de vista.', tipo: 'Opiniones', xp: 30 },
-    { frase: 'Let me double-check that information for you.', traduccion: 'Déjame verificar esa información por ti.', tipo: 'Trabajo', xp: 30 }
-  ],
-  'Avanzado': [
-    { frase: 'We need to hit the ground running on this project.', traduccion: 'Necesitamos empezar este proyecto a toda marcha.', tipo: 'Modismos', xp: 40 },
-    { frase: 'It is vital to balance the pros and cons meticulously.', traduccion: 'Es vital sopesar los pros y los contras meticulosamente.', tipo: 'Negocios', xp: 40 },
-    { frase: 'Actions speak louder than words in these circumstances.', traduccion: 'Las acciones hablan más fuerte que las palabras en estas circunstancias.', tipo: 'Proverbios', xp: 40 },
-    { frase: 'She managed to overcome the obstacles against all odds.', traduccion: 'Ella logró superar los obstáculos contra todo pronóstico.', tipo: 'Avanzado', xp: 40 }
-  ]
+// Base de datos de lecciones dinámicas para la sección "Comenzar lección"
+const LECCIONES_POR_NIVEL = {
+  'Básico': {
+    titulo: 'Talking about your day',
+    descripcion: 'Aprende a describir tu rutina diaria básica.',
+    frases: [
+      { en: 'I wake up at 7 AM every day.', es: 'Me despierto a las 7 AM todos los días.' },
+      { en: 'I drink coffee in the morning.', es: 'Bebo café por la mañana.' }
+    ]
+  },
+  'Intermedio': {
+    titulo: 'Expressing complex opinions',
+    descripcion: 'Aprende a debatir y defender tus puntos de vista.',
+    frases: [
+      { en: 'From my perspective, the benefits outweigh the risks.', es: 'Desde mi perspectiva, los beneficios superan los riesgos.' },
+      { en: 'I see your point, however, I disagree with the conclusion.', es: 'Entiendo tu punto, sin embargo, no estoy de acuerdo con la conclusión.' }
+    ]
+  },
+  'Avanzado': {
+    titulo: 'Mastering Business Idioms',
+    descripcion: 'Domina frases nativas del mundo corporativo.',
+    frases: [
+      { en: 'We need to hit the ground running on this project.', es: 'Necesitamos empezar este proyecto a toda marcha.' },
+      { en: 'Let’s circle back to this topic during next week’s meeting.', es: 'Volvamos a este tema en la reunión de la próxima semana.' }
+    ]
+  }
 };
 
 export default function Home() {
-  // Estados de navegación e interfaz
+  // Navegación principal (Menú inferior)
+  const [activeTab, setActiveTab] = useState('inicio'); // 'inicio', 'lecciones', 'chat', 'progreso', 'perfil'
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedModule, setSelectedModule] = useState('Básico');
-  const [activeTab, setActiveTab] = useState('aprender'); // 'aprender' o 'chat'
-  const [xp, setXp] = useState(0);
-  const [streak, setStreak] = useState(1);
+  const [selectedModule, setSelectedModule] = useState('Básico'); // Básico, Intermedio, Avanzado
   
-  // Estados del Chat Inteligente
+  // Progreso y juego
+  const [xp, setXp] = useState(65);
+  const [streak, setStreak] = useState(1);
+  const [progresoLeccion, setProgresoLeccion] = useState(0);
+  const [mostrarPractica, setMostrarPractica] = useState(false);
+
+  // Estados del Chatbot Inteligente con Voz
   const [chat, setChat] = useState([]);
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   
   const chatEndRef = useRef(null);
 
-  // Cargar progreso del usuario
-  useEffect(() => {
-    const savedXp = localStorage.getItem('linguago_xp');
-    if (savedXp) setXp(Number(savedXp));
-    
-    setChat([
-      { role: 'bot', text: "👋 Hi! I am Eliza, your personal coach. Press the 🎙️ button to practice speaking or type your message in English!" }
-    ]);
-  }, []);
-
-  // Auto-scroll del chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat]);
 
-  // Reproductor de voz (La app te habla)
+  useEffect(() => {
+    setChat([
+      { role: 'bot', text: `Hi! I am your AI Coach. Open the chat or select an activity below to start practicing your ${selectedModule} English! 🎙️` }
+    ]);
+  }, [selectedModule]);
+
+  // Función de Síntesis de Voz (La IA habla)
   const speak = (text) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const msg = new SpeechSynthesisUtterance(text);
       msg.lang = 'en-US';
-      msg.rate = 0.9;
+      msg.rate = 0.95;
       window.speechSynthesis.speak(msg);
     }
   };
 
-  // Reconocimiento de voz (Tú le hablas a la app)
+  // Función de Reconocimiento de Voz (Tú le hablas a la IA)
   const startSpeechRecognition = () => {
     if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      
       recognition.lang = 'en-US';
-      recognition.interimResults = false;
       
       recognition.onstart = () => setIsListening(true);
       recognition.onerror = () => setIsListening(false);
@@ -79,143 +82,206 @@ export default function Home() {
       
       recognition.onresult = (event) => {
         const vozTexto = event.results[0][0].transcript;
-        procesarMensaje(vozTexto);
+        procesarMensajeChat(vozTexto);
       };
-      
       recognition.start();
     } else {
-      alert("Tu dispositivo no soporta reconocimiento de voz nativo. ¡Prueba en Google Chrome!");
+      alert("Tu dispositivo o navegador no soporta el reconocimiento de voz por ahora. ¡Prueba en Google Chrome!");
     }
   };
 
-  const procesarMensaje = (texto) => {
+  const procesarMensajeChat = (texto) => {
     if (!texto.trim()) return;
-
     setChat(prev => [...prev, { role: 'user', text: texto }]);
-    const nuevosXp = xp + 10;
-    setXp(nuevosXp);
-    localStorage.setItem('linguago_xp', nuevosXp);
+    setXp(prev => prev + 10);
+    setInput('');
 
     setTimeout(() => {
-      let respuestaIA = `I love how you said that! Let's keep talking in the ${selectedModule} level. Tell me, what did you do today?`;
+      let respuesta = `That sounds interesting! Let's keep talking in English. Can you elaborate on that?`;
       if (texto.toLowerCase().includes('hello') || texto.toLowerCase().includes('hi')) {
-        respuestaIA = "Hello there! It is wonderful to practice with you. Ready for some challenges?";
+        respuesta = "Hello! Welcome back to your daily practice. How is your day going?";
       }
-      setChat(prev => [...prev, { role: 'bot', text: respuestaIA }]);
-      speak(respuestaIA);
-    }, 800);
-  };
-
-  const handleSendText = () => {
-    procesarMensaje(input);
-    setInput('');
-  };
-
-  const completarLeccion = (item) => {
-    const nuevosXp = xp + item.xp;
-    setXp(nuevosXp);
-    localStorage.setItem('linguago_xp', nuevosXp);
-    speak(item.frase);
-    
-    // Alertas dinámicas interactivas simuladas en el chat oculto
-    setChat(prev => [...prev, { role: 'bot', text: `🎉 Practiced: "${item.frase}" (+${item.xp} XP!)` }]);
+      setChat(prev => [...prev, { role: 'bot', text: respuesta }]);
+      speak(respuesta);
+    }, 700);
   };
 
   return (
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #58cc02 0%, #235300 100%)', fontFamily: 'system-ui, -apple-system, sans-serif', padding: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <main style={{ minHeight: '100vh', background: '#f4f6f8', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', padding: '0 10px' }}>
       
-      <div style={{ width: '100%', maxWidth: '430px', background: '#ffffff', borderRadius: '30px', height: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
+      {/* CONTENEDOR DISPOSITIVO MÓVIL ESTILO DUOLINGO */}
+      <div style={{ width: '100%', maxWidth: '430px', height: '94vh', background: '#ffffff', borderRadius: '40px', boxShadow: '0 20px 40px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', border: '6px solid #e5e5e5' }}>
         
-        {/* HEADER VIBRANTE */}
-        <nav style={{ background: '#58cc02', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '4px solid #46a302' }}>
-          <button onClick={() => setMenuOpen(true)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '28px', cursor: 'pointer' }}>☰</button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '20px' }}>⚡</span>
-            <b style={{ color: 'white', fontSize: '18px', letterSpacing: '0.5px' }}>LINGUAGO PRO</b>
+        {/* TOP BAR / NOTIFICACIONES Y MÓDULO */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 20px', alignItems: 'center', borderBottom: '1px solid #f0f0f0', background: '#ffffff' }}>
+          <button onClick={() => setMenuOpen(true)} style={{ background: '#f4f6f8', border: 'none', width: '40px', height: '40px', borderRadius: '12px', fontSize: '20px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>☰</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#eef2ff', padding: '6px 14px', borderRadius: '20px' }}>
+            <span style={{ fontSize: '16px' }}>🌐</span>
+            <b style={{ color: '#4f46e5', fontSize: '14px', textTransform: 'uppercase' }}>{selectedModule}</b>
           </div>
-          <div style={{ background: '#ffc800', color: '#e67e22', fontWeight: 'bold', padding: '5px 12px', borderRadius: '15px', borderBottom: '2px solid #e67e22', fontSize: '13px' }}>
-            👑 {xp} XP
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <span style={{ background: '#fff3e0', color: '#ff9800', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>🔥 {streak} días</span>
+            <span style={{ background: '#e8f5e9', color: '#4caf50', padding: '5px 10px', borderRadius: '15px', fontSize: '12px', fontWeight: 'bold' }}>⭐ {xp} XP</span>
           </div>
-        </nav>
+        </div>
 
-        {/* SIDEBAR / MENU LATERAL DE NIVELES */}
+        {/* MENÚ HAMBURGUESA LATERAL */}
         {menuOpen && (
           <>
-            <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', zIndex: 99 }} />
-            <div style={{ position: 'fixed', top: 0, left: 0, width: '280px', height: '100%', background: '#111827', zIndex: 100, padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ color: '#58cc02', margin: 0, fontSize: '22px' }}>Sesiones de Idioma</h3>
-                <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '24px' }}>✕</button>
+            <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.4)', zIndex: 100 }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '260px', height: '100%', background: '#ffffff', zIndex: 101, padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, color: '#1f2937' }}>Niveles</h3>
+                <button onClick={() => setMenuOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>✕</button>
               </div>
-              {['Básico', 'Intermedio', 'Avanzado'].map(m => (
-                <button key={m} onClick={() => { setSelectedModule(m); setMenuOpen(false); }} style={{ padding: '16px', borderRadius: '16px', border: 'none', textAlign: 'left', background: selectedModule === m ? '#58cc02' : '#1f2937', color: 'white', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', borderBottom: selectedModule === m ? '4px solid #46a302' : '4px solid #11141a', transition: '0.2s' }}>
-                  ⭐ Sesión {m}
+              {['Básico', 'Intermedio', 'Avanzado'].map(nivel => (
+                <button key={nivel} onClick={() => { setSelectedModule(nivel); setMenuOpen(false); }} style={{ padding: '14px', borderRadius: '14px', border: 'none', textAlign: 'left', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', background: selectedModule === nivel ? '#58cc02' : '#f4f6f8', color: selectedModule === nivel ? '#ffffff' : '#4b5563', transition: '0.2s' }}>
+                  ⚡ Nivel {nivel}
                 </button>
               ))}
             </div>
           </>
         )}
 
-        {/* PANTALLA PRINCIPAL CAMBIANTE SEGÚN LA PESTAÑA */}
-        <div style={{ flex: 1, overflowY: 'auto', background: '#f7f9fa', padding: '20px' }}>
+        {/* CUERPO CENTRAL DE LA APP (CAMBIA SEGÚN LA PESTAÑA INFERIOR) */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#ffffff' }}>
           
-          {activeTab === 'aprender' ? (
-            /* VISTA 1: MÓDULO DE APRENDIZAJE INTERACTIVO */
-            <div>
-              <div style={{ background: '#84d8ff', padding: '15px', borderRadius: '20px', color: '#1890ff', fontWeight: 'bold', marginBottom: '20px', border: '2px solid #1890ff', fontSize: '14px', textAlign: 'center' }}>
-                🚀 Estás estudiando el nivel: <span style={{ textTransform: 'uppercase', color: '#0050b3' }}>{selectedModule}</span>
-              </div>
+          {activeTab === 'inicio' && (
+            /* ================= PESTAÑA 1: INICIO (ESTILO COPIA FIEL) ================= */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {CONTENIDO_NIVELES[selectedModule].map((item, index) => (
-                  <div key={index} style={{ background: '#ffffff', border: '2px solid #e5e5e5', borderBottom: '5px solid #e5e5e5', padding: '15px', borderRadius: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ flex: 1, paddingRight: '10px' }}>
-                      <span style={{ fontSize: '10px', background: '#ebebeb', color: '#666', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{item.tipo}</span>
-                      <b style={{ display: 'block', color: '#3c3c3c', fontSize: '15px', marginTop: '5px' }}>{item.frase}</b>
-                      <span style={{ color: '#afafaf', fontSize: '13px' }}>{item.traduccion}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button onClick={() => speak(item.frase)} style={{ background: '#e5e5e5', border: 'none', width: '38px', height: '38px', borderRadius: '12px', cursor: 'pointer', fontSize: '16px' }}>🔊</button>
-                      <button onClick={() => completarLeccion(item)} style={{ background: '#58cc02', color: 'white', border: 'none', borderBottom: '3px solid #46a302', padding: '0 12px', borderRadius: '12px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>+{item.xp}</button>
-                    </div>
+              {/* CARD DE PROGRESO CON AVATAR EN VERDE JADE DUOLINGO */}
+              <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)', borderRadius: '24px', padding: '20px', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 20px rgba(16, 185, 129, 0.2)' }}>
+                <div style={{ flex: 1, zIndex: 1 }}>
+                  <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '10px', fontWeight: 'bold' }}>Tu progreso</span>
+                  <h2 style={{ margin: '8px 0 2px 0', fontSize: '22px', fontWeight: 'bold' }}>Nivel {selectedModule}</h2>
+                  <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9 }}>Idioma Objetivo: <b>us English 🇺🇸</b></p>
+                  
+                  {/* Barra de Progreso */}
+                  <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.3)', borderRadius: '10px', overflow: 'hidden', display: 'flex' }}>
+                    <div style={{ width: '65%', height: '100%', background: '#ffc800', borderRadius: '10px' }} />
                   </div>
-                ))}
+                  <span style={{ fontSize: '11px', display: 'block', marginTop: '5px', opacity: 0.8 }}>65% Completado • ¡Sigue así! 💪</span>
+                </div>
+                {/* Muñequita Avatar Vectorizada */}
+                <div style={{ width: '100px', height: '110px', background: '#ffe4e6', borderRadius: '50% 50% 40% 40%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '50px', marginLeft: '10px', boxShadow: '0 8px 15px rgba(0,0,0,0.1)', position: 'relative' }}>
+                  👩‍
+                  <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: '#ffffff', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}>🎧</div>
+                </div>
               </div>
+
+              {/* SECCIÓN MÓDULOS DE ACTIVIDADES (GRID) */}
+              <div>
+                <h4 style={{ margin: '0 0 15px 0', color: '#1f2937', fontSize: '16px', fontWeight: 'bold' }}>¿Qué quieres hacer hoy?</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  
+                  <div onClick={() => setActiveTab('chat')} style={{ background: '#e6fcf5', border: '2px solid #c3fae8', borderRadius: '20px', padding: '15px', textAlign: 'center', cursor: 'pointer', transition: '0.2s' }}>
+                    <div style={{ fontSize: '28px', marginBottom: '5px' }}>💬</div>
+                    <b style={{ color: '#0ca678', fontSize: '14px', display: 'block' }}>Hablar</b>
+                    <span style={{ color: '#20c997', fontSize: '11px' }}>Practica conversaciones</span>
+                  </div>
+
+                  <div onClick={() => { setActiveTab('chat'); startSpeechRecognition(); }} style={{ background: '#e7f5ff', border: '2px solid #d0ebff', borderRadius: '20px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
+                    <div style={{ fontSize: '28px', marginBottom: '5px' }}>🎧</div>
+                    <b style={{ color: '#1c7ed6', fontSize: '14px', display: 'block' }}>Escuchar</b>
+                    <span style={{ color: '#228be6', fontSize: '11px' }}>Mejora tu comprensión</span>
+                  </div>
+
+                  <div onClick={() => setMostrarPractica(true)} style={{ background: '#f3f0ff', border: '2px solid #e5dbff', borderRadius: '20px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
+                    <div style={{ fontSize: '28px', marginBottom: '5px' }}>📚</div>
+                    <b style={{ color: '#7048e8', fontSize: '14px', display: 'block' }}>Aprender</b>
+                    <span style={{ color: '#748ffc', fontSize: '11px' }}>Gramática y vocabulario</span>
+                  </div>
+
+                  <div onClick={() => setActiveTab('chat')} style={{ background: '#fff9db', border: '2px solid #fff3bf', borderRadius: '20px', padding: '15px', textAlign: 'center', cursor: 'pointer' }}>
+                    <div style={{ fontSize: '28px', marginBottom: '5px' }}>✏️</div>
+                    <b style={{ color: '#f59f00', fontSize: '14px', display: 'block' }}>Escribir</b>
+                    <span style={{ color: '#fab005', fontSize: '11px' }}>Práctica tu escritura</span>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* CARD LECCIÓN DIARIA DINÁMICA */}
+              <div style={{ background: '#ffffff', border: '2px solid #e5e5e5', borderRadius: '24px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ flex: 1 }}>
+                  <span style={{ color: '#7048e8', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>⭐ Lección sugerida</span>
+                  <h3 style={{ margin: '6px 0 4px 0', color: '#2c2c2c', fontSize: '17px' }}>{LECCIONES_POR_NIVEL[selectedModule].titulo}</h3>
+                  <p style={{ margin: '0 0 15px 0', color: '#777777', fontSize: '12px' }}>{LECCIONES_POR_NIVEL[selectedModule].descripcion}</p>
+                  <button onClick={() => setMostrarPractica(true)} style={{ background: '#58cc02', color: '#ffffff', border: 'none', borderBottom: '4px solid #46a302', padding: '10px 20px', borderRadius: '15px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>Comenzar lección</button>
+                </div>
+                <div style={{ fontSize: '50px' }}>📅</div>
+              </div>
+
+              {/* MINI PRÁCTICA INTERACTIVA FLOTANTE */}
+              {mostrarPractica && (
+                <div style={{ background: '#f8fafc', border: '2px solid #4f46e5', borderRadius: '20px', padding: '15px', marginTop: '5px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <b>Challenge Activo:</b>
+                    <button onClick={() => setMostrarPractica(false)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>Cerrar</button>
+                  </div>
+                  {LECCIONES_POR_NIVEL[selectedModule].frases.map((f, i) => (
+                    <div key={i} style={{ background: '#ffffff', padding: '10px', borderRadius: '12px', marginBottom: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1e293b' }}>{f.en}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>{f.es}</div>
+                      </div>
+                      <button onClick={() => { speak(f.en); setXp(p => p + 15); }} style={{ background: '#eef2ff', border: 'none', padding: '6px 10px', borderRadius: '8px', cursor: 'pointer' }}>🔊 +15 XP</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
             </div>
-          ) : (
-            /* VISTA 2: CHATBOT OCULTO CON ELIZA (SOLO SE VE SI ENTRAS AQUÍ) */
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '10px' }}>
-              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '60px' }}>
+          )}
+
+          {activeTab === 'chat' && (
+            /* ================= PESTAÑA 3: CHAT INTELIGENTE EXCLUSIVO ================= */
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '70px' }}>
                 {chat.map((msg, i) => (
                   <div key={i} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
-                    <div style={{ background: msg.role === 'user' ? '#1890ff' : '#ffffff', color: msg.role === 'user' ? '#white' : '#3c3c3c', padding: '12px 16px', borderRadius: '18px', fontSize: '14.5px', border: msg.role === 'user' ? 'none' : '2px solid #e5e5e5', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    <div style={{ background: msg.role === 'user' ? '#10b981' : '#f1f5f9', color: msg.role === 'user' ? '#ffffff' : '#1f2937', padding: '12px 16px', borderRadius: '20px', fontSize: '14px', border: msg.role === 'user' ? 'none' : '1px solid #e2e8f0', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
                       {msg.text}
                     </div>
                   </div>
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              
-              {/* ENTRADA DE VOZ Y TEXTO */}
-              <div style={{ position: 'absolute', bottom: '80px', left: '20px', right: '20px', display: 'flex', gap: '8px', background: '#f7f9fa', padding: '5px 0' }}>
-                <button onClick={startSpeechRecognition} style={{ background: isListening ? '#ff4d4f' : '#1890ff', color: 'white', border: 'none', width: '45px', height: '45px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)' }}>
+
+              {/* CONTROLES DE ENTRADA (VOZ Y TEXTO) ABAJO DEL CHAT */}
+              <div style={{ position: 'absolute', bottom: '75px', left: '15px', right: '15px', display: 'flex', gap: '8px', background: '#ffffff', padding: '5px 0' }}>
+                <button onClick={startSpeechRecognition} style={{ background: isListening ? '#ef4444' : '#10b981', color: 'white', border: 'none', width: '45px', height: '45px', borderRadius: '50%', cursor: 'pointer', fontSize: '18px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 4px 10px rgba(16,185,129,0.3)' }}>
                   {isListening ? '🛑' : '🎙️'}
                 </button>
-                <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendText()} placeholder={isListening ? "Listening..." : "Talk or type here..."} disabled={isListening} style={{ flex: 1, padding: '12px 15px', borderRadius: '20px', border: '2px solid #e5e5e5', outline: 'none' }} />
-                <button onClick={handleSendText} style={{ background: '#58cc02', color: 'white', border: 'none', borderBottom: '3px solid #46a302', padding: '0 15px', borderRadius: '20px', fontWeight: 'bold' }}>Send</button>
+                <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && procesarMensajeChat(input)} placeholder={isListening ? "Listening your English..." : "Escribe o usa el micrófono..."} disabled={isListening} style={{ flex: 1, padding: '12px 15px', borderRadius: '25px', border: '2px solid #e5e5e5', outline: 'none', fontSize: '14px' }} />
+                <button onClick={() => procesarMensajeChat(input)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 15px', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' }}>Enviar</button>
               </div>
             </div>
           )}
 
+          {activeTab === 'lecciones' && <p style={{ textAlign: 'center', color: '#777', marginTop: '40px' }}>📚 Sección de cursos estructurados en desarrollo.</p>}
+          {activeTab === 'progreso' && <p style={{ textAlign: 'center', color: '#777', marginTop: '40px' }}>📈 Gráficos de rendimiento y estadísticas.</p>}
+          {activeTab === 'perfil' && <p style={{ textAlign: 'center', color: '#777', marginTop: '40px' }}>👤 Configuración de tu cuenta de Linguago.</p>}
+
         </div>
 
-        {/* MENÚ DE NAVEGACIÓN INFERIOR (ESTILO DUOLINGO) */}
-        <div style={{ background: '#ffffff', borderTop: '2px solid #e5e5e5', display: 'flex', padding: '10px 0', justifyContent: 'space-around' }}>
-          <button onClick={() => setActiveTab('aprender')} style={{ background: 'none', border: 'none', color: activeTab === 'aprender' ? '#58cc02' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', fontSize: '13px' }}>
-            <span style={{ fontSize: '20px' }}>📚</span> Aprender
+        {/* MENÚ DE NAVEGACIÓN INFERIOR (ESTILO DUOLINGO PERFECTO) */}
+        <div style={{ background: '#ffffff', borderTop: '2px solid #e5e5e5', display: 'flex', padding: '10px 0', justifyContent: 'space-around', position: 'absolute', bottom: 0, width: '100%', zIndex: 10 }}>
+          <button onClick={() => setActiveTab('inicio')} style={{ background: 'none', border: 'none', color: activeTab === 'inicio' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
+            <span style={{ fontSize: '20px' }}>🏠</span> Inicio
           </button>
-          <button onClick={() => setActiveTab('chat')} style={{ background: 'none', border: 'none', color: activeTab === 'chat' ? '#1890ff' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', cursor: 'pointer', fontSize: '13px' }}>
+          <button onClick={() => setActiveTab('lecciones')} style={{ background: 'none', border: 'none', color: activeTab === 'lecciones' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
+            <span style={{ fontSize: '20px' }}>📖</span> Lecciones
+          </button>
+          <button onClick={() => setActiveTab('chat')} style={{ background: 'none', border: 'none', color: activeTab === 'chat' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
             <span style={{ fontSize: '20px' }}>💬</span> Chat IA
+          </button>
+          <button onClick={() => setActiveTab('progreso')} style={{ background: 'none', border: 'none', color: activeTab === 'progreso' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
+            <span style={{ fontSize: '20px' }}>📊</span> Progreso
+          </button>
+          <button onClick={() => setActiveTab('perfil')} style={{ background: 'none', border: 'none', color: activeTab === 'perfil' ? '#10b981' : '#afafaf', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', cursor: 'pointer', fontSize: '11px' }}>
+            <span style={{ fontSize: '20px' }}>👤</span> Perfil
           </button>
         </div>
 
